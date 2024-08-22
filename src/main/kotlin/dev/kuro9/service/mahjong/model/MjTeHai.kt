@@ -3,6 +3,7 @@ package dev.kuro9.service.mahjong.model
 import dev.kuro9.service.mahjong.model.MjPai.Companion.parseMjPai
 import dev.kuro9.service.mahjong.model.MjPai.Companion.parseOneHai
 import dev.kuro9.service.mahjong.model.MjTeHai.Body.Companion.parseMjBody
+import kotlinx.css.em
 
 data class MjTeHai (
     private val head: Head,
@@ -91,7 +92,11 @@ data class MjTeHai (
          * @return List<가능한 몸통 형태>
          */
         private fun separateBodyR(nowPai: List<Body> = emptyList(), leftPai: List<MjPai>): List<List<Body>> {
-            if (leftPai.isEmpty()) return listOf(nowPai)
+            when {
+                leftPai.isEmpty() -> return listOf(nowPai)
+                leftPai.size < 3 -> return emptyList()
+
+            }
 
             val firstPai = leftPai.first()
 
@@ -121,7 +126,11 @@ data class MjTeHai (
                 val body = Body(toUse)
                 resultList += separateBodyR(
                     nowPai = nowPai.toMutableList().also { it.add(body) },
-                    leftPai = leftPai.toMutableList().also { it.removeAll(toUse) }
+                    leftPai = leftPai.toMutableList().also {
+                        it.remove(toUse[0])
+                        it.remove(toUse[1])
+                        it.remove(toUse[2])
+                    }
                 )
             }
 
@@ -130,7 +139,12 @@ data class MjTeHai (
                 val body = Body(samePai)
                 resultList += separateBodyR(
                     nowPai = nowPai.toMutableList().also { it.add(body) },
-                    leftPai = leftPai.toMutableList().also { it.removeAll(samePai) }
+                    leftPai = leftPai.toMutableList().also {
+                        it.remove(samePai[0])
+                        it.remove(samePai[1])
+                        it.remove(samePai[2])
+                        it.remove(samePai[3])
+                    }
                 )
             }
 
@@ -190,5 +204,5 @@ fun main() {
 
     println()
 
-    println(MjTeHai.parse("1112344555s".parseMjPai(), "1s".parseOneHai(), "777s".parseMjBody()))
+    println(MjTeHai.parse("11333444466s".parseMjPai(), "1s".parseOneHai(), "777s".parseMjBody()))
 }
