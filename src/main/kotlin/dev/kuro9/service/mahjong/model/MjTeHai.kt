@@ -15,7 +15,8 @@ data class MjTeHai (
 
     fun isHuro(): Boolean = huroBody.isNotEmpty()
     fun isMenzen(): Boolean = !isHuro()
-    fun getKanzuCount(): Int = memzenBody.count { it.isKanzuBody() } + huroBody.count { it.isKanzuBody() }
+    fun getKanzuCount(): Int = memzenBody.count { it.type == Body.Type.KANZU } +
+            huroBody.count { it.type == Body.Type.KANZU }
 
 
     companion object {
@@ -184,7 +185,11 @@ data class MjTeHai (
     class Body(private val paiList: List<MjPai>) {
         init { check(isMjBody(paiList)) }
 
-        fun isKanzuBody(): Boolean = paiList.size == 4
+        val type: Type = when {
+            paiList.size == 4 -> Type.KANZU
+            paiList.all { it.num == paiList.first().num } -> Type.KUTSU
+            else -> Type.SHUNZU
+        }
 
         override fun toString(): String {
             return paiList.joinToString(separator = "", postfix = paiList.first().type.toString()) { it.num.toString() }
@@ -194,6 +199,10 @@ data class MjTeHai (
             fun String.parseMjBody(): Body {
                 return Body(parseMjPai(true))
             }
+        }
+
+        enum class Type {
+            SHUNZU, KUTSU, KANZU
         }
     }
 }
