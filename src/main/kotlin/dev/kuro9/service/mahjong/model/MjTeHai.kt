@@ -3,20 +3,38 @@ package dev.kuro9.service.mahjong.model
 import dev.kuro9.service.mahjong.model.MjPai.Companion.parseMjPai
 import dev.kuro9.service.mahjong.model.MjPai.Companion.parseOneHai
 import dev.kuro9.service.mahjong.model.MjTeHai.Body.Companion.parseMjBody
-import kotlinx.css.em
 
 data class MjTeHai (
     private val head: Head,
     private val memzenBody: List<Body>,
     private val tsumoHai: MjPai,
     private val huroBody: List<Body> = emptyList(),
-) {
+): MjTeComponentInterface {
     init { check(memzenBody.size + huroBody.size == 4) }
 
-    fun isHuro(): Boolean = huroBody.isNotEmpty()
-    fun isMenzen(): Boolean = !isHuro()
-    fun getKanzuCount(): Int = memzenBody.count { it.type == Body.Type.KANZU } +
-            huroBody.count { it.type == Body.Type.KANZU }
+    override fun isHuro(): Boolean = huroBody.isNotEmpty()
+    override fun isMenzen(): Boolean = !isHuro()
+    override fun getDoraCount(doraPai: List<MjPai>): Int {
+        TODO("Not yet implemented")
+    }
+
+    override fun containsYaoPai(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isAllYaoPai(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun isAllNoduPai(): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override fun getPaiType(): PaiType {
+        TODO("Not yet implemented")
+    }
+    fun getKanzuCount(): Int = memzenBody.count { it.bodyType == Body.Type.KANZU } +
+            huroBody.count { it.bodyType == Body.Type.KANZU }
 
 
     companion object {
@@ -170,10 +188,33 @@ data class MjTeHai (
         }
     }
 
-    class Head(private val paiList: List<MjPai>) {
+    class Head(private val paiList: List<MjPai>): MjTeComponentInterface {
         init {
             check(paiList.size == 2)
             check(paiList.first() == paiList.last())
+        }
+
+        val paiType: PaiType by lazy { paiList.first().type }
+        override fun getPaiType(): PaiType =  paiList.first().type
+
+        override fun isMenzen(): Boolean = !paiList.first().isHuro
+
+        override fun isHuro(): Boolean = paiList.first().isHuro
+
+        override fun getDoraCount(doraPai: List<MjPai>): Int {
+            TODO("Not yet implemented")
+        }
+
+        override fun containsYaoPai(): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun isAllYaoPai(): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun isAllNoduPai(): Boolean {
+            TODO("Not yet implemented")
         }
 
         override fun toString(): String {
@@ -182,13 +223,38 @@ data class MjTeHai (
         }
     }
 
-    class Body(private val paiList: List<MjPai>) {
+    class Body(private val paiList: List<MjPai>): MjTeComponentInterface {
         init { check(isMjBody(paiList)) }
 
-        val type: Type = when {
-            paiList.size == 4 -> Type.KANZU
-            paiList.all { it.num == paiList.first().num } -> Type.KUTSU
-            else -> Type.SHUNZU
+        val bodyType: Type by lazy {
+            when {
+                paiList.size == 4 -> Type.KANZU
+                paiList.all { it.num == paiList.first().num } -> Type.KUTSU
+                else -> Type.SHUNZU
+            }
+        }
+
+        val paiType: PaiType by lazy { paiList.first().type }
+        override fun getPaiType(): PaiType =  paiList.first().type
+
+        override fun isMenzen(): Boolean = !paiList.first().isHuro
+
+        override fun isHuro(): Boolean = paiList.first().isHuro
+
+        override fun getDoraCount(doraPai: List<MjPai>): Int {
+            TODO("Not yet implemented")
+        }
+
+        override fun containsYaoPai(): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun isAllYaoPai(): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun isAllNoduPai(): Boolean {
+            TODO("Not yet implemented")
         }
 
         override fun toString(): String {
