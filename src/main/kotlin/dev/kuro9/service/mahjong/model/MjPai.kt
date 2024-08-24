@@ -1,45 +1,56 @@
 package dev.kuro9.service.mahjong.model
 
-import dev.kuro9.service.mahjong.model.PaiType.Companion.isPaiType
-
-data class MjPai private constructor(
+data class MjPai internal constructor(
     val num: Int,
     val type: PaiType,
     val isAkaDora: Boolean = false,
-    val isHuro: Boolean = false
 ) : Comparable<MjPai> {
+
+    /**
+     * 야오패인지 여부 리턴
+     */
+    fun isYao(): Boolean {
+        if (type == PaiType.Z) return true
+        return num == 1 || num == 9
+    }
+
+    /**
+     * 노두패인지 여부 리턴
+     */
+    fun isNodu(): Boolean {
+        if (type == PaiType.Z) return false
+        return num == 1 || num == 9
+    }
+
+    /**
+     * 숫자패인지 여부 리턴
+     */
+    fun isSuziPai(): Boolean {
+        return type != PaiType.Z
+    }
+
+    /**
+     * 자패인지 여부 리턴
+     */
+    fun isZiPai(): Boolean {
+        return type == PaiType.Z
+    }
+
     companion object {
-        fun of (num: Int, type: PaiType, isHuro: Boolean = false): MjPai {
+        fun of(num: Int, type: PaiType): MjPai {
             when (type) {
                 PaiType.M, PaiType.P, PaiType.S -> check(num in 0..9)
                 PaiType.Z -> check(num in 1..7)
             }
 
-            return if (num == 0) MjPai(5, type, true, isHuro)
-            else MjPai(num, type, false, isHuro)
-        }
-
-        fun String.parseMjPai(isHuro: Boolean = false): List<MjPai> {
-            var typePtr: PaiType = PaiType.of(this.last())
-            val resultList = mutableListOf<MjPai>()
-
-            for (char in this.replace(" ", "").uppercase().reversed().drop(1)) {
-                when {
-                    char.isDigit() -> resultList.add(of(char.digitToInt(), typePtr, isHuro))
-                    char.isPaiType() -> typePtr = PaiType.of(char)
-                    else -> throw IllegalArgumentException("$char is not a valid pai")
-                }
-            }
-
-            return resultList
+            return if (num == 0) MjPai(5, type, true)
+            else MjPai(num, type, false)
         }
 
         fun String.parseOneHai(): MjPai {
-            return parseMjPai(false).takeIf { it.size == 1 }?.first() ?: throw IllegalArgumentException()
+            return parseMjPai().takeIf { it.size == 1 }?.first() ?: throw IllegalArgumentException()
         }
     }
-
-
 
     override fun compareTo(other: MjPai): Int {
         check(type == other.type) { "type not matches" }

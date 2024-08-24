@@ -1,44 +1,28 @@
 package dev.kuro9.service.mahjong.model
 
-import dev.kuro9.service.mahjong.model.MjPai.Companion.parseMjPai
 import dev.kuro9.service.mahjong.model.MjPai.Companion.parseOneHai
-import dev.kuro9.service.mahjong.model.MjTeHai.Body.Companion.parseMjBody
+import dev.kuro9.service.mahjong.utils.countDora
 
-data class MjTeHai (
-    private val head: Head,
-    private val memzenBody: List<Body>,
+data class MjTeHai(
+    private val head: MjHead,
+    private val body: List<MjBody>,
     private val tsumoHai: MjPai,
-    private val huroBody: List<Body> = emptyList(),
-): MjTeComponentInterface {
-    init { check(memzenBody.size + huroBody.size == 4) }
-
-    override fun isHuro(): Boolean = huroBody.isNotEmpty()
-    override fun isMenzen(): Boolean = !isHuro()
-    override fun getDoraCount(doraPai: List<MjPai>): Int {
-        TODO("Not yet implemented")
+) {
+    init {
+        check(body.size == 4)
     }
 
-    override fun containsYaoPai(): Boolean {
-        TODO("Not yet implemented")
+    val isHuro: Boolean by lazy { body.any { it.isHuro() } }
+    val isMenzen: Boolean = !isHuro
+    fun getDoraCount(doraPaiList: List<MjPai>): Int {
+        return head.getDoraCount(doraPaiList) +
+                body.sumOf { it.getDoraCount(doraPaiList) } +
+                tsumoHai.countDora(doraPaiList)
     }
-
-    override fun isAllYaoPai(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun isAllNoduPai(): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun getPaiType(): PaiType {
-        TODO("Not yet implemented")
-    }
-    fun getKanzuCount(): Int = memzenBody.count { it.bodyType == Body.Type.KANZU } +
-            huroBody.count { it.bodyType == Body.Type.KANZU }
 
 
     companion object {
-        fun parse(teHai: List<MjPai>, tsumoHai: MjPai, vararg huroBody: Body): List<MjTeHai> {
+        fun parse(teHai: List<MjPai>, tsumoHai: MjPai, vararg huroBody: MjBody): List<MjTeHai> {
             val paiMap: Map<PaiType, MutableList<MjPai>> = mapOf(
                 PaiType.M to mutableListOf(),
                 PaiType.P to mutableListOf(),
@@ -54,12 +38,12 @@ data class MjTeHai (
                 .flatMap { (head, possibleBodyKatachi) ->
                     possibleBodyKatachi
                         ?.filter { it.size + huroBody.size == 4 }
-                        ?.map { MjTeHai(head, it, tsumoHai, huroBody.toList()) } ?: emptyList()
+                        ?.map { MjTeHai(head, it + huroBody, tsumoHai) } ?: emptyList()
                 }
         }
 
-        private fun separateHead(paiMap: Map<PaiType, List<MjPai>>): List<Pair<Head, Map<PaiType, List<MjPai>>>> {
-            val resultList: MutableList<Pair<Head, Map<PaiType, List<MjPai>>>> = mutableListOf()
+        private fun separateHead(paiMap: Map<PaiType, List<MjPai>>): List<Pair<MjHead, Map<PaiType, List<MjPai>>>> {
+            val resultList: MutableList<Pair<MjHead, Map<PaiType, List<MjPai>>>> = mutableListOf()
             paiMap.forEach { (type, list) ->
                 list.groupBy { it.num }
                     .filter { (_, samePaiList) -> samePaiList.size >= 2 }
@@ -70,7 +54,7 @@ data class MjTeHai (
                                 it.remove(samePaiList.first())
                                 it.remove(samePaiList.last())
                             }
-                            resultList.add(Head(targetHead) to result)
+                            resultList.add(MjHead(targetHead) to result)
                         }
                     }
             }
@@ -80,15 +64,15 @@ data class MjTeHai (
         /**
          * 패에서 몸통을 분리해 가능한 모든 경우의 수를 출력합니다.
          */
-        private fun separateBody(paiMap: Map<PaiType, List<MjPai>>): List<List<Body>>? {
+        private fun separateBody(paiMap: Map<PaiType, List<MjPai>>): List<List<MjBody>>? {
             val ziPaiBody = paiMap.getOrElse(PaiType.Z) { emptyList() }.groupBy { it.num }
                 .also {
                     if (it.values.any { samePaiList -> samePaiList.size !in 3..4 }) return null
                 }
-                .map { (_, list) -> Body(list) }
+                .map { (_, list) -> MjBody.of(list, false) }
 
-            val bodyByType: Map<PaiType, List<List<Body>>> = paiMap.filterNot { it.key == PaiType.Z }
-                .map { (type, paiList) ->type to separateBodyR(leftPai = paiList.sorted().toMutableList()) }
+            val bodyByType: Map<PaiType, List<List<MjBody>>> = paiMap.filterNot { it.key == PaiType.Z }
+                .map { (type, paiList) -> type to separateBodyR(leftPai = paiList.sorted().toMutableList()) }
                 .toMap()
 
             val manzuBodyList = bodyByType.getOrDefault(PaiType.M, emptyList())
@@ -98,7 +82,7 @@ data class MjTeHai (
             return manzuBodyList.flatMap { first ->
                 souzuBodyList.flatMap { second ->
                     pinzuBodyList.map { third ->
-                            first + second + third + ziPaiBody
+                        first + second + third + ziPaiBody
                     }
                 }
             }
@@ -110,7 +94,7 @@ data class MjTeHai (
          * @param leftPai 몸통을 만들고 남은 패
          * @return List<가능한 몸통 형태>
          */
-        private fun separateBodyR(nowPai: List<Body> = emptyList(), leftPai: List<MjPai>): List<List<Body>> {
+        private fun separateBodyR(nowPai: List<MjBody> = emptyList(), leftPai: List<MjPai>): List<List<MjBody>> {
             when {
                 leftPai.isEmpty() -> return listOf(nowPai)
                 leftPai.size < 3 -> return emptyList()
@@ -120,15 +104,15 @@ data class MjTeHai (
             val firstPai = leftPai.first()
 
             val nextPai = leftPai.find { it.num == firstPai.num + 1 }
-            val nextNextPai = nextPai?.let { leftPai.find { target -> target.num == it.num + 1 }}
+            val nextNextPai = nextPai?.let { leftPai.find { target -> target.num == it.num + 1 } }
 
             val samePai = leftPai.filter { it.num == firstPai.num }
 
-            val resultList: MutableList<List<Body>> = mutableListOf()
+            val resultList: MutableList<List<MjBody>> = mutableListOf()
 
             // 슌쯔일 때
             if (nextPai != null && nextNextPai != null) {
-                val body = Body(listOf(firstPai, nextPai, nextNextPai))
+                val body = MjBody.of(listOf(firstPai, nextPai, nextNextPai), false)
                 resultList += separateBodyR(
                     nowPai = nowPai.toMutableList().also { it.add(body) },
                     leftPai = leftPai.toMutableList().also {
@@ -142,7 +126,7 @@ data class MjTeHai (
             // 커쯔(3개)일 때
             if (samePai.size >= 3) {
                 val toUse = samePai.take(3)
-                val body = Body(toUse)
+                val body = MjBody.of(toUse, false)
                 resultList += separateBodyR(
                     nowPai = nowPai.toMutableList().also { it.add(body) },
                     leftPai = leftPai.toMutableList().also {
@@ -155,7 +139,7 @@ data class MjTeHai (
 
             // 깡쯔일 때
             if (samePai.size == 4) {
-                val body = Body(samePai)
+                val body = MjBody.of(samePai, false)
                 resultList += separateBodyR(
                     nowPai = nowPai.toMutableList().also { it.add(body) },
                     leftPai = leftPai.toMutableList().also {
@@ -169,107 +153,6 @@ data class MjTeHai (
 
             return resultList
         }
-
-        /**
-         *
-         */
-        private fun isMjBody(paiList: List<MjPai>): Boolean {
-            val (standardNum, standardType) = paiList.firstOrNull() ?: return false
-            when {
-                paiList.size !in 3..4 -> return false
-                paiList.all { it.type == standardType }.not() -> return false
-                when(paiList.first().type) {
-                    PaiType.M, PaiType.P, PaiType.S -> paiList.all { it.num == standardNum } or
-                            (paiList.sorted().withIndex().all { (index, pai) -> standardNum + index == pai.num } and (paiList.size == 3))
-                    PaiType.Z -> paiList.all { it.num == standardNum }
-                }.not() -> return false
-            }
-            return true
-        }
-    }
-
-    class Head(private val paiList: List<MjPai>): MjTeComponentInterface {
-        init {
-            check(paiList.size == 2)
-            check(paiList.first() == paiList.last())
-        }
-
-        val paiType: PaiType by lazy { paiList.first().type }
-        override fun getPaiType(): PaiType =  paiList.first().type
-
-        override fun isMenzen(): Boolean = !paiList.first().isHuro
-
-        override fun isHuro(): Boolean = paiList.first().isHuro
-
-        override fun getDoraCount(doraPai: List<MjPai>): Int {
-            TODO("Not yet implemented")
-        }
-
-        override fun containsYaoPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun isAllYaoPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun isAllNoduPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun toString(): String {
-            val (num, type) = paiList.first()
-            return "$num$num$type"
-        }
-    }
-
-    class Body(private val paiList: List<MjPai>): MjTeComponentInterface {
-        init { check(isMjBody(paiList)) }
-
-        val bodyType: Type by lazy {
-            when {
-                paiList.size == 4 -> Type.KANZU
-                paiList.all { it.num == paiList.first().num } -> Type.KUTSU
-                else -> Type.SHUNZU
-            }
-        }
-
-        val paiType: PaiType by lazy { paiList.first().type }
-        override fun getPaiType(): PaiType =  paiList.first().type
-
-        override fun isMenzen(): Boolean = !paiList.first().isHuro
-
-        override fun isHuro(): Boolean = paiList.first().isHuro
-
-        override fun getDoraCount(doraPai: List<MjPai>): Int {
-            TODO("Not yet implemented")
-        }
-
-        override fun containsYaoPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun isAllYaoPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun isAllNoduPai(): Boolean {
-            TODO("Not yet implemented")
-        }
-
-        override fun toString(): String {
-            return paiList.joinToString(separator = "", postfix = paiList.first().type.toString()) { it.num.toString() }
-        }
-
-        companion object {
-            fun String.parseMjBody(): Body {
-                return Body(parseMjPai(true))
-            }
-        }
-
-        enum class Type {
-            SHUNZU, KUTSU, KANZU
-        }
     }
 }
 
@@ -279,5 +162,5 @@ fun main() {
 
     println()
 
-    println(MjTeHai.parse("11333444466s".parseMjPai(), "1s".parseOneHai(), "777s".parseMjBody()))
+    println(MjTeHai.parse("1112223334445s".parseMjPai(), "5s".parseOneHai()))
 }
