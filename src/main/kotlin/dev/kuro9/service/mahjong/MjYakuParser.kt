@@ -1,8 +1,117 @@
 package dev.kuro9.service.mahjong
 
-import dev.kuro9.service.mahjong.model.MjTeHai
+import dev.kuro9.service.mahjong.enumuration.MjKaze
+import dev.kuro9.service.mahjong.enumuration.MjYaku
+import dev.kuro9.service.mahjong.model.*
 
 object MjYakuParser {
 
-    fun MjTeHai.getScoreInfo() {}
+    /**
+     * 우연역이나 장 상황에 따른 역이 아닌 패를 보고 알 수 있는 역 목록을 반환합니다.
+     */
+    fun getYaku(
+        agariHai: MjAgariHai,
+        agariBlock: MjComponent,
+        baKaze: MjKaze,
+        ziKaze: MjKaze,
+        vararg blocks: MjComponent
+    ): Set<MjYaku> {
+        val componentList = (blocks.toList() + agariBlock)
+        val ziKazeHai = MjPai(ziKaze.toMjPaiNotationNum(), PaiType.Z)
+        val baKazeHai = MjPai(baKaze.toMjPaiNotationNum(), PaiType.Z)
+        val hakuHai = MjPai(5, PaiType.Z)
+        val hatsuHai = MjPai(6, PaiType.Z)
+        val chuuHai = MjPai(7, PaiType.Z)
+        val yakuHai = listOf (
+            ziKazeHai,
+            baKazeHai,
+            hakuHai,
+            hatsuHai,
+            chuuHai
+        )
+
+        fun MjYaku.isYakuFulFilled(): Boolean {
+            if (this.onlyMenzen and (componentList.all { it.isMenzen() }.not())) return false // 멘젠한정 공통체크
+
+            return when (this) {
+                MjYaku.TSUMO -> agariHai.isTsumo()
+                MjYaku.YAKU_BAKASE -> componentList.any {
+                    val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
+
+                    kutsuBody.paiList.first() == baKazeHai
+                }
+                MjYaku.YAKU_ZIKASE -> componentList.any {
+                    val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
+
+                    kutsuBody.paiList.first() == ziKazeHai
+                }
+                MjYaku.YAKU_HAKU -> componentList.any {
+                    val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
+
+                    kutsuBody.paiList.first() == hakuHai
+                }
+                MjYaku.YAKU_HATSU -> componentList.any {
+                    val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
+
+                    kutsuBody.paiList.first() == hatsuHai
+                }
+                MjYaku.YAKU_CHUU -> componentList.any {
+                    val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
+
+                    kutsuBody.paiList.first() == chuuHai
+                }
+                MjYaku.TANYAO -> componentList.all { it.containsYaoPai().not() }
+                MjYaku.PINFU -> {
+                    val head: MjHead = componentList.filterIsInstance<MjHead>().takeIf { it.size == 1 }?.first() ?: return false
+                    val bodyList = componentList.filterIsInstance<MjBody>().takeIf { it.isNotEmpty() } ?: return false
+
+                    when {
+                        agariBlock is MjHead -> false // 머리단기로 화료
+                        bodyList.any { it !is MjBody.ShunzuBody } -> false // 슌쯔가 아닌 것이 있는지 체크
+                        head.paiList.first() in yakuHai -> false // 머리가 역패인지 체크
+                        (agariBlock as MjBody.ShunzuBody).isRyoumen(agariHai.pai).not() -> false // 양면대기 체크
+
+                        else -> true
+                    }
+                }
+                MjYaku.IPECO -> {
+                    val shunzuBodyList = componentList.filterIsInstance<MjBody.ShunzuBody>().takeIf { it.size >= 2 } ?: return false
+                    shunzuBodyList.size == shunzuBodyList.distinct().size
+                }
+                MjYaku.CHANTA -> TODO()
+                MjYaku.HONROUTOU -> TODO()
+                MjYaku.SANSHOKU_DOUJUU -> TODO()
+                MjYaku.SANSHOKU_DOUKOU -> TODO()
+                MjYaku.ITTKITSUKAN -> TODO()
+                MjYaku.TOITOI -> TODO()
+                MjYaku.SANANKOU -> TODO()
+                MjYaku.SANKANTSU -> TODO()
+                MjYaku.CHITOITSU -> TODO()
+                MjYaku.JUNCHANTA -> TODO()
+                MjYaku.HONITSU -> TODO()
+                MjYaku.RYANPEKO -> TODO()
+                MjYaku.SHOUSANGEN -> TODO()
+                MjYaku.CHINITSU -> TODO()
+
+                MjYaku.RIICHI, MjYaku.IPPATSU, MjYaku.CHANKAN, MjYaku.HAITEI, MjYaku.HOUTEI, MjYaku.DOUBLE_RIICHI -> false
+            }
+        }
+
+        return MjYaku.entries.filter { it.isYakuFulFilled() }
+            .deleteIllegalStateYaku()
+    }
+
+    /**
+     * 같이 존재할 수 없는 역을 삭제합니다.
+     */
+    private fun Collection<MjYaku>.deleteIllegalStateYaku(): Set<MjYaku> {
+        val mutableResultSet = this.toMutableSet()
+
+        // TODO 역만 추가
+        if(MjYaku.CHINITSU in mutableResultSet) mutableResultSet.remove(MjYaku.HONITSU)
+        if(MjYaku.RYANPEKO in mutableResultSet) mutableResultSet.remove(MjYaku.IPECO)
+        if(MjYaku.JUNCHANTA in mutableResultSet) mutableResultSet.remove(MjYaku.CHANTA)
+
+        return mutableResultSet
+    }
 }

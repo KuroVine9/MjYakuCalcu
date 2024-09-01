@@ -1,9 +1,45 @@
 package dev.kuro9.service.mahjong.model
 
-class MjHead(private val paiList: List<MjPai>) : MjComponent {
+import dev.kuro9.service.mahjong.enumuration.MjKaze
+
+class MjHead(val paiList: List<MjPai>) : MjComponent, MjFuuProvider {
     init {
         check(paiList.size == 2)
         check(paiList.first() == paiList.last())
+    }
+
+    fun isZikazeAtama(ziKaze: MjKaze): Boolean {
+        return (paiList.first() == MjPai(ziKaze.toMjPaiNotationNum(), PaiType.Z))
+    }
+
+    fun isBakazeAtama(baKaze: MjKaze): Boolean {
+        return (paiList.first() == MjPai(baKaze.toMjPaiNotationNum(), PaiType.Z))
+    }
+
+    override fun hasAgariHai(agariHai: MjPai): Boolean {
+        return agariHai in paiList
+    }
+
+    override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
+        var basicFuu = 0
+        if (agariHai.pai == paiList.first()) {
+            basicFuu += 2
+            if (agariHai.isTsumo()) basicFuu += 2
+        }
+
+        if (isZikazeAtama(ziKaze)) basicFuu += 2
+        if (isBakazeAtama(baKaze)) basicFuu += 2
+
+        return basicFuu
+    }
+
+    override fun getBlockFuu(ziKaze: MjKaze, baKaze: MjKaze): Int {
+        var basicFuu = 0
+
+        if (isZikazeAtama(ziKaze)) basicFuu += 2
+        if (isBakazeAtama(baKaze)) basicFuu += 2
+
+        return basicFuu
     }
 
     override fun getPaiType(): PaiType = paiList.first().type

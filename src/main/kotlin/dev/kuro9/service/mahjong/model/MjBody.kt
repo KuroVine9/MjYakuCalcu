@@ -1,7 +1,9 @@
 package dev.kuro9.service.mahjong.model
 
+import dev.kuro9.service.mahjong.enumuration.MjKaze
 
-sealed interface MjBody : MjComponent {
+
+sealed interface MjBody : MjComponent, MjFuuProvider {
     val paiList: List<MjPai>
     val isHuroBody: Boolean
 
@@ -13,6 +15,10 @@ sealed interface MjBody : MjComponent {
                 doraPaiList.sumOf { doraPai ->
                     paiList.count { doraPai == it }
                 }
+    }
+
+    override fun hasAgariHai(agariHai: MjPai): Boolean {
+        return agariHai in paiList
     }
 
     companion object {
@@ -36,7 +42,7 @@ sealed interface MjBody : MjComponent {
                 }
 
                 paiList.size == 3 -> PongBody(paiList, isHuro)
-                paiList.size == 4 -> KangBody(paiList, isHuro)
+                paiList.size == 4 -> KanBody(paiList, isHuro)
 
                 else -> throw IllegalStateException("Unhandled case. 패 파싱 실패.")
             }
@@ -48,6 +54,21 @@ sealed interface MjBody : MjComponent {
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
     ) : MjBody {
+        fun isRyoumen(agariHai: MjPai): Boolean {
+            return when (paiList.indexOf(agariHai)) {
+                0 -> (paiList.last().num != 9)
+                1 -> false
+                2 -> (paiList.last().num != 1)
+                else -> throw IllegalArgumentException("$agariHai 가 이 몸통($this)에 존재하지 않습니다.")
+            }
+        }
+
+        override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
+            return if (isRyoumen(agariHai.pai)) 0 else 2
+        }
+
+        override fun getBlockFuu(ziKaze: MjKaze, baKaze: MjKaze): Int = 0
+
         override fun containsYaoPai(): Boolean = paiList.any { it.isYao() }
         override fun isAllYaoPai(): Boolean = false
         override fun isAllNoduPai(): Boolean = false
@@ -59,12 +80,40 @@ sealed interface MjBody : MjComponent {
                 }
         }
 
+        override fun equals(other: Any?): Boolean {
+            when(other) {
+                null -> return false
+                (other !is ShunzuBody) -> return false
+            }
+
+            other as ShunzuBody
+            return (other.isHuroBody == isHuroBody) and other.paiList.zip(paiList).all { (a, b) -> a == b }
+        }
+
     }
 
     class PongBody internal constructor(
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
     ) : MjBody {
+        override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
+            var basic = 2
+            if (isAllYaoPai()) basic *= 2
+
+            if (agariHai.pai != paiList.first()) return if (isHuro()) basic else basic * 2
+
+            if (isMenzen() && agariHai.isTsumo()) basic *= 2
+
+            return basic
+        }
+
+        override fun getBlockFuu(ziKaze: MjKaze, baKaze: MjKaze): Int {
+            var basic = 2
+            if (isAllYaoPai()) basic *= 2
+            if (isMenzen()) basic *= 2
+            return basic
+        }
+
         override fun containsYaoPai(): Boolean = paiList.first().isYao()
         override fun isAllYaoPai(): Boolean = containsYaoPai()
         override fun isAllNoduPai(): Boolean = paiList.first().isNodu()
@@ -76,12 +125,40 @@ sealed interface MjBody : MjComponent {
                 }
         }
 
+        override fun equals(other: Any?): Boolean {
+            when(other) {
+                null -> return false
+                (other !is PongBody) -> return false
+            }
+
+            other as PongBody
+            return (other.isHuroBody == isHuroBody) and (other.paiList.first() == paiList.first())
+        }
+
     }
 
-    class KangBody internal constructor(
+    class KanBody internal constructor(
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
     ) : MjBody {
+        override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
+            var basic = 8
+            if (isAllYaoPai()) basic *= 2
+
+            if (agariHai.pai != paiList.first()) return if (isHuro()) basic else basic * 2
+
+            if (isMenzen() && agariHai.isTsumo()) basic *= 2
+
+            return basic
+        }
+
+        override fun getBlockFuu(ziKaze: MjKaze, baKaze: MjKaze): Int {
+            var basic = 8
+            if (isAllYaoPai()) basic *= 2
+            if (isMenzen()) basic *= 2
+            return basic
+        }
+
         override fun containsYaoPai(): Boolean = paiList.first().isYao()
         override fun isAllYaoPai(): Boolean = containsYaoPai()
         override fun isAllNoduPai(): Boolean = paiList.first().isNodu()
@@ -91,6 +168,16 @@ sealed interface MjBody : MjComponent {
                 .let {
                     if (isHuroBody) "KANG($it)" else it
                 }
+        }
+
+        override fun equals(other: Any?): Boolean {
+            when(other) {
+                null -> return false
+                (other !is KanBody) -> return false
+            }
+
+            other as KanBody
+            return (other.isHuroBody == isHuroBody) and (other.paiList.first() == paiList.first())
         }
 
     }

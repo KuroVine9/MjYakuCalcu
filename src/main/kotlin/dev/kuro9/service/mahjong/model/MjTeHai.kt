@@ -1,5 +1,8 @@
 package dev.kuro9.service.mahjong.model
 
+import dev.kuro9.service.mahjong.MjYakuParser
+import dev.kuro9.service.mahjong.utils.MjFuuToHanVo
+
 data class MjTeHai(
     private val head: MjHead,
     private val body: List<MjBody>,
@@ -17,6 +20,30 @@ data class MjTeHai(
                 agariHai.getDoraCount(doraPaiList)
     }
 
+    /**
+     * 가능한 부/판수의 형태를 모두 리턴합니다.
+     */
+    fun getPossibleFuuHan(gameInfo: MjGameInfoVo): Set<MjFuuToHanVo> {
+        val blockList = (body + head)
+        val hasAgariHaiBlockIndex = blockList.withIndex().filter { (index, block) ->
+            block.hasAgariHai(agariHai.pai)
+        }.map { it.index }
+
+        return hasAgariHaiBlockIndex.map{
+            val notAgariBlockList = blockList.filterIndexed { index, _ -> index != it }
+
+            val fuu = blockList[it].getAgariBlockFuu(agariHai, gameInfo.zikaze, gameInfo.bakaze) + notAgariBlockList
+                .sumOf { block -> block.getBlockFuu(gameInfo.zikaze, gameInfo.bakaze) }
+            val yakuSet = MjYakuParser.getYaku(
+                agariHai,
+                blockList[it],
+                gameInfo.bakaze,
+                gameInfo.zikaze,
+                *notAgariBlockList.toTypedArray()
+            )
+            MjFuuToHanVo(fuu, yakuSet.sumOf { it.han })
+        }.toSet()
+    }
 
     companion object {
         fun parse(teHai: List<MjPai>, agariHai: MjAgariHai, vararg huroBody: MjBody): List<MjTeHai> {

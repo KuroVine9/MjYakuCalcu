@@ -1,5 +1,7 @@
 package dev.kuro9.service.mahjong.utils
 
+import dev.kuro9.service.mahjong.model.MjTeHai
+
 object MjScoreUtil {
 
     private val MANKAN = (8000 to 12000) to MjScoreI.Tsumo.MANKAN
@@ -100,6 +102,11 @@ object MjScoreUtil {
             }
         }.toScoreVo(scoreEnum, fuu, han)
     }
+
+    fun List<MjTeHai>.toFuuHan() {
+
+    }
+
 
     enum class MjScore(val hanRange: IntRange) {
         YAKUMAN(13..Int.MAX_VALUE),

@@ -1,4 +1,4 @@
-package dev.kuro9.service.mahjong.model
+package dev.kuro9.service.mahjong.enumuration
 
 enum class MjYaku(val han: Int, val onlyMenzen: Boolean, val kuiSagari: Boolean, val isYakuman: Boolean) {
     RIICHI(1, true, false, false),
@@ -29,14 +29,13 @@ enum class MjYaku(val han: Int, val onlyMenzen: Boolean, val kuiSagari: Boolean,
     SANANKOU(2, false, false, false),
     SANKANTSU(2, false, false, false),
     CHITOITSU(2, true, false, false),
-
+    SHOUSANGEN(2, false, false, false),
 
     JUNCHANTA(3, false, true, false),
     HONITSU(3, false, true, false),
     RYANPEKO(3, true, false, false),
 
 
-    SHOUSANGEN(3, false, false, false),
     CHINITSU(6, false, true, false),
 
 
