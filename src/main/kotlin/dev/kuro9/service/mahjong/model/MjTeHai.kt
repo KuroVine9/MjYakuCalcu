@@ -6,7 +6,7 @@ import dev.kuro9.service.mahjong.utils.countDora
 data class MjTeHai(
     private val head: MjHead,
     private val body: List<MjBody>,
-    private val tsumoHai: MjPai,
+    private val agariHai: MjAgariHai,
 ) {
     init {
         check(body.size == 4)
@@ -17,12 +17,12 @@ data class MjTeHai(
     fun getDoraCount(doraPaiList: List<MjPai>): Int {
         return head.getDoraCount(doraPaiList) +
                 body.sumOf { it.getDoraCount(doraPaiList) } +
-                tsumoHai.countDora(doraPaiList)
+                agariHai.getDoraCount(doraPaiList)
     }
 
 
     companion object {
-        fun parse(teHai: List<MjPai>, tsumoHai: MjPai, vararg huroBody: MjBody): List<MjTeHai> {
+        fun parse(teHai: List<MjPai>, agariHai: MjAgariHai, vararg huroBody: MjBody): List<MjTeHai> {
             val paiMap: Map<PaiType, MutableList<MjPai>> = mapOf(
                 PaiType.M to mutableListOf(),
                 PaiType.P to mutableListOf(),
@@ -30,7 +30,7 @@ data class MjTeHai(
                 PaiType.Z to mutableListOf(),
             )
 
-            (teHai + tsumoHai).forEach { paiMap[it.type]!!.add(it) }
+            (teHai + agariHai.pai).forEach { paiMap[it.type]!!.add(it) }
             paiMap.values.forEach { it.sort() }
 
             return separateHead(paiMap).map { (head, leftPaiList) -> head to separateBody(leftPaiList) }
@@ -38,7 +38,7 @@ data class MjTeHai(
                 .flatMap { (head, possibleBodyKatachi) ->
                     possibleBodyKatachi
                         ?.filter { it.size + huroBody.size == 4 }
-                        ?.map { MjTeHai(head, it + huroBody, tsumoHai) } ?: emptyList()
+                        ?.map { MjTeHai(head, it + huroBody, agariHai) } ?: emptyList()
                 }
         }
 
@@ -162,5 +162,5 @@ fun main() {
 
     println()
 
-    println(MjTeHai.parse("1112223334445s".parseMjPai(), "5s".parseOneHai()))
+    // println(MjTeHai.parse("1112223334445s".parseMjPai(), "5s".parseOneHai()))
 }
