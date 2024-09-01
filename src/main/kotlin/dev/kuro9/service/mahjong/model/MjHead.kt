@@ -1,6 +1,6 @@
 package dev.kuro9.service.mahjong.model
 
-class MjHead(private val paiList: List<MjPai>, private val isHuro: Boolean = false) : MjComponent {
+class MjHead(private val paiList: List<MjPai>) : MjComponent {
     init {
         check(paiList.size == 2)
         check(paiList.first() == paiList.last())
