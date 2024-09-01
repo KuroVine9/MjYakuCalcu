@@ -1,6 +1,10 @@
-package dev.kuro9.service.mahjong.model
+package dev.kuro9.service.mahjong.utils
 
+import dev.kuro9.service.mahjong.model.MjAgariHai
+import dev.kuro9.service.mahjong.model.MjBody
+import dev.kuro9.service.mahjong.model.MjPai
 import dev.kuro9.service.mahjong.model.MjPai.Companion.of
+import dev.kuro9.service.mahjong.model.PaiType
 import dev.kuro9.service.mahjong.model.PaiType.Companion.isPaiType
 
 fun String.parseMjPai(): List<MjPai> {
@@ -25,3 +29,6 @@ fun String.parseOneHai(): MjPai {
 fun String.parseMjBody(isHuro: Boolean = false): MjBody {
     return MjBody.of(this.parseMjPai(), isHuro)
 }
+
+fun String.parseAgariHai(isRon: Boolean): MjAgariHai = MjAgariHai.of(this.parseOneHai(), isRon)
+fun MjPai.toAgariHai(isRon: Boolean): MjAgariHai = MjAgariHai.of(this, isRon)

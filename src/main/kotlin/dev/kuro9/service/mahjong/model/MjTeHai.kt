@@ -1,8 +1,5 @@
 package dev.kuro9.service.mahjong.model
 
-import dev.kuro9.service.mahjong.model.MjPai.Companion.parseOneHai
-import dev.kuro9.service.mahjong.utils.countDora
-
 data class MjTeHai(
     private val head: MjHead,
     private val body: List<MjBody>,

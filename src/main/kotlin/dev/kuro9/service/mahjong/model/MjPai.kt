@@ -46,10 +46,6 @@ data class MjPai internal constructor(
             return if (num == 0) MjPai(5, type, true)
             else MjPai(num, type, false)
         }
-
-        fun String.parseOneHai(): MjPai {
-            return parseMjPai().takeIf { it.size == 1 }?.first() ?: throw IllegalArgumentException()
-        }
     }
 
     override fun compareTo(other: MjPai): Int {
