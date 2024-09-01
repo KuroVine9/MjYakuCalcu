@@ -2,6 +2,18 @@ package dev.kuro9.service.mahjong.model
 
 
 sealed interface MjBody : MjComponent {
+    val paiList: List<MjPai>
+    val isHuroBody: Boolean
+
+    override fun getPaiType(): PaiType = paiList.first().type
+    override fun isMenzen(): Boolean = !isHuroBody
+    override fun isHuro(): Boolean = isHuroBody
+    override fun getDoraCount(doraPaiList: List<MjPai>): Int {
+        return paiList.count { it.isAkaDora } +
+                doraPaiList.sumOf { doraPai ->
+                    paiList.count { doraPai == it }
+                }
+    }
 
     companion object {
         fun of(paiList: List<MjPai>, isHuro: Boolean = false): MjBody {
@@ -33,22 +45,9 @@ sealed interface MjBody : MjComponent {
 
 
     class ShunzuBody internal constructor(
-        private val paiList: List<MjPai>,
-        private val isHuro: Boolean = false,
+        override val paiList: List<MjPai>,
+        override val isHuroBody: Boolean = false,
     ) : MjBody {
-        override fun getPaiType(): PaiType = paiList.first().type
-
-        override fun isMenzen(): Boolean = !isHuro
-
-        override fun isHuro(): Boolean = isHuro
-
-        override fun getDoraCount(doraPaiList: List<MjPai>): Int {
-            return paiList.count { it.isAkaDora } +
-                    doraPaiList.sumOf { doraPai ->
-                        paiList.count { doraPai == it }
-                    }
-        }
-
         override fun containsYaoPai(): Boolean = paiList.any { it.isYao() }
         override fun isAllYaoPai(): Boolean = false
         override fun isAllNoduPai(): Boolean = false
@@ -56,27 +55,16 @@ sealed interface MjBody : MjComponent {
         override fun toString(): String {
             return paiList.joinToString(separator = "", postfix = paiList.first().type.toString()) { it.num.toString() }
                 .let {
-                    if (isHuro) "CHI-($it)" else it
+                    if (isHuroBody) "CHI-($it)" else it
                 }
         }
 
     }
 
     class PongBody internal constructor(
-        private val paiList: List<MjPai>,
-        private val isHuro: Boolean = false,
+        override val paiList: List<MjPai>,
+        override val isHuroBody: Boolean = false,
     ) : MjBody {
-        override fun getPaiType(): PaiType = paiList.first().type
-
-        override fun isMenzen(): Boolean = !isHuro
-
-        override fun isHuro(): Boolean = isHuro
-
-        override fun getDoraCount(doraPaiList: List<MjPai>): Int {
-            return paiList.count { it.isAkaDora } +
-                    (doraPaiList.count { paiList.first() == it } * 3)
-        }
-
         override fun containsYaoPai(): Boolean = paiList.first().isYao()
         override fun isAllYaoPai(): Boolean = containsYaoPai()
         override fun isAllNoduPai(): Boolean = paiList.first().isNodu()
@@ -84,27 +72,16 @@ sealed interface MjBody : MjComponent {
         override fun toString(): String {
             return paiList.joinToString(separator = "", postfix = paiList.first().type.toString()) { it.num.toString() }
                 .let {
-                    if (isHuro) "PONG($it)" else it
+                    if (isHuroBody) "PONG($it)" else it
                 }
         }
 
     }
 
     class KangBody internal constructor(
-        private val paiList: List<MjPai>,
-        private val isHuro: Boolean = false,
+        override val paiList: List<MjPai>,
+        override val isHuroBody: Boolean = false,
     ) : MjBody {
-        override fun getPaiType(): PaiType = paiList.first().type
-
-        override fun isMenzen(): Boolean = !isHuro
-
-        override fun isHuro(): Boolean = isHuro
-
-        override fun getDoraCount(doraPaiList: List<MjPai>): Int {
-            return paiList.count { it.isAkaDora } +
-                    (doraPaiList.count { paiList.first() == it } * 4)
-        }
-
         override fun containsYaoPai(): Boolean = paiList.first().isYao()
         override fun isAllYaoPai(): Boolean = containsYaoPai()
         override fun isAllNoduPai(): Boolean = paiList.first().isNodu()
@@ -112,7 +89,7 @@ sealed interface MjBody : MjComponent {
         override fun toString(): String {
             return paiList.joinToString(separator = "", postfix = paiList.first().type.toString()) { it.num.toString() }
                 .let {
-                    if (isHuro) "KANG($it)" else it
+                    if (isHuroBody) "KANG($it)" else it
                 }
         }
 
