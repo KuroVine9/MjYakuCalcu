@@ -21,6 +21,14 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         return agariHai in paiList
     }
 
+    override fun all(predicate: (MjPai) -> Boolean): Boolean {
+        return paiList.all(predicate)
+    }
+
+    override fun any(predicate: (MjPai) -> Boolean): Boolean {
+        return paiList.any(predicate)
+    }
+
     companion object {
         fun of(paiList: List<MjPai>, isHuro: Boolean = false): MjBody {
             val paiListSorted = paiList.sorted()
@@ -81,7 +89,7 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         }
 
         override fun equals(other: Any?): Boolean {
-            when(other) {
+            when (other) {
                 null -> return false
                 (other !is ShunzuBody) -> return false
             }
@@ -126,7 +134,7 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         }
 
         override fun equals(other: Any?): Boolean {
-            when(other) {
+            when (other) {
                 null -> return false
                 (other !is PongBody) -> return false
             }
@@ -171,7 +179,7 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         }
 
         override fun equals(other: Any?): Boolean {
-            when(other) {
+            when (other) {
                 null -> return false
                 (other !is KanBody) -> return false
             }

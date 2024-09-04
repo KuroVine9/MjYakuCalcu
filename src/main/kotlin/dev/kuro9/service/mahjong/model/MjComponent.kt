@@ -21,4 +21,10 @@ sealed interface MjComponent {
 
     /** 모든 패 노두패(all) */
     fun isAllNoduPai(): Boolean
+
+    /** 모든 패가 해당 조건을 만족하면 true를 리턴합니다. */
+    fun all(predicate: (MjPai) -> Boolean): Boolean
+
+    /** 어떤 패가 해당 조건을 만족하면 true를 리턴합니다. */
+    fun any(predicate: (MjPai) -> Boolean): Boolean
 }

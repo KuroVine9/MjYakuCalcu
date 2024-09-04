@@ -1,6 +1,6 @@
 package dev.kuro9.service.mahjong.model
 
-sealed interface MjAgariHai : MjComponent{
+sealed interface MjAgariHai : MjComponent {
     val pai: MjPai
 
     companion object {
@@ -19,16 +19,19 @@ sealed interface MjAgariHai : MjComponent{
     override fun isMenzen() = true
     override fun isHuro() = false
     override fun getDoraCount(doraPaiList: List<MjPai>): Int {
-        return doraPaiList.count { it == pai} + if(pai.isAkaDora) 1 else 0
+        return doraPaiList.count { it == pai } + if (pai.isAkaDora) 1 else 0
     }
 
     override fun containsYaoPai(): Boolean = pai.isYao()
     override fun isAllYaoPai(): Boolean = pai.isYao()
     override fun isAllNoduPai(): Boolean = pai.isNodu()
+    override fun all(predicate: (MjPai) -> Boolean): Boolean = predicate(pai)
+    override fun any(predicate: (MjPai) -> Boolean): Boolean = predicate(pai)
 
     data class Ron(override val pai: MjPai) : MjAgariHai {
         override fun toString() = "RON($pai)"
     }
+
     data class Tsumo(override val pai: MjPai) : MjAgariHai {
         override fun toString() = "TSUMO($pai)"
     }

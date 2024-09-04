@@ -22,7 +22,7 @@ object MjYakuParser {
         val hakuHai = MjPai(5, PaiType.Z)
         val hatsuHai = MjPai(6, PaiType.Z)
         val chuuHai = MjPai(7, PaiType.Z)
-        val yakuHai = listOf (
+        val yakuHai = listOf(
             ziKazeHai,
             baKazeHai,
             hakuHai,
@@ -40,29 +40,35 @@ object MjYakuParser {
 
                     kutsuBody.paiList.first() == baKazeHai
                 }
+
                 MjYaku.YAKU_ZIKASE -> componentList.any {
                     val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
 
                     kutsuBody.paiList.first() == ziKazeHai
                 }
+
                 MjYaku.YAKU_HAKU -> componentList.any {
                     val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
 
                     kutsuBody.paiList.first() == hakuHai
                 }
+
                 MjYaku.YAKU_HATSU -> componentList.any {
                     val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
 
                     kutsuBody.paiList.first() == hatsuHai
                 }
+
                 MjYaku.YAKU_CHUU -> componentList.any {
                     val kutsuBody = (it as? MjBody)?.takeUnless { it is MjBody.ShunzuBody } ?: return@any false
 
                     kutsuBody.paiList.first() == chuuHai
                 }
+
                 MjYaku.TANYAO -> componentList.all { it.containsYaoPai().not() }
                 MjYaku.PINFU -> {
-                    val head: MjHead = componentList.filterIsInstance<MjHead>().takeIf { it.size == 1 }?.first() ?: return false
+                    val head: MjHead =
+                        componentList.filterIsInstance<MjHead>().takeIf { it.size == 1 }?.first() ?: return false
                     val bodyList = componentList.filterIsInstance<MjBody>().takeIf { it.isNotEmpty() } ?: return false
 
                     when {
@@ -74,24 +80,47 @@ object MjYakuParser {
                         else -> true
                     }
                 }
+
                 MjYaku.IPECO -> {
-                    val shunzuBodyList = componentList.filterIsInstance<MjBody.ShunzuBody>().takeIf { it.size >= 2 } ?: return false
-                    shunzuBodyList.size == shunzuBodyList.distinct().size
+                    val shunzuBodyList =
+                        componentList.filterIsInstance<MjBody.ShunzuBody>().takeIf { it.size >= 2 } ?: return false
+                    shunzuBodyList.size == 4 && shunzuBodyList.distinct().size == 3
                 }
-                MjYaku.CHANTA -> TODO()
-                MjYaku.HONROUTOU -> TODO()
+
+                MjYaku.CHANTA -> componentList.all { it.containsYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
+                MjYaku.HONROUTOU -> componentList.all { it.isAllYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.SANSHOKU_DOUJUU -> TODO()
                 MjYaku.SANSHOKU_DOUKOU -> TODO()
                 MjYaku.ITTKITSUKAN -> TODO()
-                MjYaku.TOITOI -> TODO()
+                MjYaku.TOITOI -> {
+                    val body = componentList.filterIsInstance<MjBody>()
+                    body.size == 4 && body.all { it !is MjBody.ShunzuBody }
+                }
+
                 MjYaku.SANANKOU -> TODO()
                 MjYaku.SANKANTSU -> TODO()
                 MjYaku.CHITOITSU -> TODO()
-                MjYaku.JUNCHANTA -> TODO()
-                MjYaku.HONITSU -> TODO()
-                MjYaku.RYANPEKO -> TODO()
-                MjYaku.SHOUSANGEN -> TODO()
-                MjYaku.CHINITSU -> TODO()
+                MjYaku.SHOUSANGEN -> {
+                    val sangenPaiList = listOf(hakuHai, hatsuHai, chuuHai)
+                    val bodys = componentList.filter { it.all { pai -> pai in sangenPaiList } }
+
+                    bodys.size == 3 && bodys.count { it is MjHead } == 1 && bodys.count { it is MjBody } == 2
+                }
+
+                MjYaku.JUNCHANTA -> componentList.all { it.containsYaoPai() && it.getPaiType() != PaiType.Z }
+                MjYaku.HONITSU -> {
+                    val paiTypes = componentList.map { it.getPaiType() }.distinct()
+                    PaiType.Z in paiTypes && paiTypes.size == 2
+                }
+
+                MjYaku.RYANPEKO -> {
+                    val shunzuBodyList =
+                        componentList.filterIsInstance<MjBody.ShunzuBody>().takeIf { it.size == 4 } ?: return false
+                    val bodyCount = shunzuBodyList.groupingBy { it }.eachCount()
+                    1 !in bodyCount.values
+                }
+
+                MjYaku.CHINITSU -> componentList.map { it.getPaiType() }.distinct().size == 1
 
                 MjYaku.RIICHI, MjYaku.IPPATSU, MjYaku.CHANKAN, MjYaku.HAITEI, MjYaku.HOUTEI, MjYaku.DOUBLE_RIICHI -> false
             }
@@ -108,9 +137,9 @@ object MjYakuParser {
         val mutableResultSet = this.toMutableSet()
 
         // TODO 역만 추가
-        if(MjYaku.CHINITSU in mutableResultSet) mutableResultSet.remove(MjYaku.HONITSU)
-        if(MjYaku.RYANPEKO in mutableResultSet) mutableResultSet.remove(MjYaku.IPECO)
-        if(MjYaku.JUNCHANTA in mutableResultSet) mutableResultSet.remove(MjYaku.CHANTA)
+        if (MjYaku.CHINITSU in mutableResultSet) mutableResultSet.remove(MjYaku.HONITSU)
+        if (MjYaku.RYANPEKO in mutableResultSet) mutableResultSet.remove(MjYaku.IPECO)
+        if (MjYaku.JUNCHANTA in mutableResultSet) mutableResultSet.remove(MjYaku.CHANTA)
 
         return mutableResultSet
     }
