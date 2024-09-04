@@ -90,16 +90,32 @@ object MjYakuParser {
                 MjYaku.CHANTA -> componentList.all { it.containsYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.HONROUTOU -> componentList.all { it.isAllYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.SANSHOKU_DOUJUU -> TODO()
+
                 MjYaku.SANSHOKU_DOUKOU -> TODO()
-                MjYaku.ITTKITSUKAN -> TODO()
+                MjYaku.ITTKITSUKAN -> run {
+                    val shunzuBodys = componentList.filterIsInstance<MjBody.ShunzuBody>()
+                    val (color, colorBodyList) = shunzuBodys.groupBy { it.getPaiType() }
+                        .filter { (key, value) -> value.size >= 3 }
+                        .entries
+                        .firstOrNull() ?: return@run false
+
+                    val checkNum: List<MjPai>.(Set<Int>) -> Boolean = {
+                        this.map { pai -> pai.num }.toSet() == it
+                    }
+
+                    colorBodyList.any { it.paiList.checkNum(setOf(1, 2, 3)) }
+                            && colorBodyList.any { it.paiList.checkNum(setOf(4, 5, 6)) }
+                            && colorBodyList.any { it.paiList.checkNum(setOf(7, 8, 9)) }
+                }
+
                 MjYaku.TOITOI -> {
                     val body = componentList.filterIsInstance<MjBody>()
                     body.size == 4 && body.all { it !is MjBody.ShunzuBody }
                 }
 
                 MjYaku.SANANKOU -> TODO()
-                MjYaku.SANKANTSU -> TODO()
-                MjYaku.CHITOITSU -> TODO()
+                MjYaku.SANKANTSU -> componentList.filterIsInstance<MjBody.KanBody>().size == 3
+                MjYaku.CHITOITSU -> componentList.filterIsInstance<MjHead>().size == 7
                 MjYaku.SHOUSANGEN -> {
                     val sangenPaiList = listOf(hakuHai, hatsuHai, chuuHai)
                     val bodys = componentList.filter { it.all { pai -> pai in sangenPaiList } }
