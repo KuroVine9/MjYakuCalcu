@@ -38,5 +38,20 @@ enum class MjYaku(val han: Int, val onlyMenzen: Boolean, val kuiSagari: Boolean,
 
     CHINITSU(6, false, true, false),
 
+    TENHOU(13, true, false, true),
+    CHIHOU(13, true, false, true),
+    SUANKOU(13, true, false, true),
+    KOKUSHI(13, true, false, true),
+    DAISANGEN(13, false, false, true),
+    TSUISO(13, false, false, true),
+    RYUISO(13, false, false, true),
+    CHINROTO(13, false, false, true),
+    SYOUSUSI(13, false, false, true),
+    CHUREN(13, true, false, true),
+    SUKANTSU(13, false, false, true),
 
+    DAISUSI(26, false, false, true),
+    SUANKOU_TANKI(26, true, false, true),
+    KOKUSHI_13MEN(26, true, false, true),
+    CHUREN_9MEN(26, true, false, true),
 }

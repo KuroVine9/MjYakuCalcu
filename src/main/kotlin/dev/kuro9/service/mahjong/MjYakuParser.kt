@@ -162,6 +162,21 @@ object MjYakuParser {
                 MjYaku.CHINITSU -> componentList.map { it.getPaiType() }.distinct().size == 1
 
                 MjYaku.RIICHI, MjYaku.IPPATSU, MjYaku.CHANKAN, MjYaku.HAITEI, MjYaku.HOUTEI, MjYaku.DOUBLE_RIICHI -> false
+                MjYaku.TENHOU -> TODO()
+                MjYaku.CHIHOU -> TODO()
+                MjYaku.SUANKOU -> TODO()
+                MjYaku.KOKUSHI -> TODO()
+                MjYaku.DAISANGEN -> TODO()
+                MjYaku.TSUISO -> TODO()
+                MjYaku.RYUISO -> TODO()
+                MjYaku.CHINROTO -> TODO()
+                MjYaku.SYOUSUSI -> TODO()
+                MjYaku.CHUREN -> TODO()
+                MjYaku.SUKANTSU -> TODO()
+                MjYaku.DAISUSI -> TODO()
+                MjYaku.SUANKOU_TANKI -> TODO()
+                MjYaku.KOKUSHI_13MEN -> TODO()
+                MjYaku.CHUREN_9MEN -> TODO()
             }
         }
 
