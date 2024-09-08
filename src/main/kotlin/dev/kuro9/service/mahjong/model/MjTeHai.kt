@@ -99,7 +99,7 @@ data class MjTeHai(
                 }
             }
 
-            val fuuToHanVo = MjFuuToHanVo(fuu, yakuSet.sumOf { it.han }, yakuSet).takeIf { it.han > 0 } ?: return@map null
+            val fuuToHanVo = MjFuuToHanVo(fuu, yakuSet.map { if(it.kuiSagari) it.han - 1 else it.han }.sum(), yakuSet).takeIf { it.han > 0 } ?: return@map null
             when (this.agariHai) {
                 is MjAgariHai.Ron -> MjScoreUtil.getRonScore(fuuToHanVo, isOya = gameInfo.isOya)
                 is MjAgariHai.Tsumo -> MjScoreUtil.getTsumoScore(fuuToHanVo)
