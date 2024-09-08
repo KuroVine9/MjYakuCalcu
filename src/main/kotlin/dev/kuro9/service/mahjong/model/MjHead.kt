@@ -1,6 +1,7 @@
 package dev.kuro9.service.mahjong.model
 
 import dev.kuro9.service.mahjong.enumuration.MjKaze
+import kotlinx.css.pre
 
 class MjHead(val paiList: List<MjPai>) : MjComponent, MjFuuProvider {
     init {
@@ -56,6 +57,8 @@ class MjHead(val paiList: List<MjPai>) : MjComponent, MjFuuProvider {
     override fun containsYaoPai(): Boolean = paiList.any { it.isYao() }
     override fun isAllYaoPai(): Boolean = paiList.all { it.isYao() }
     override fun isAllNoduPai(): Boolean = paiList.all { it.isNodu() }
+    override fun all(predicate: (MjPai) -> Boolean): Boolean = paiList.all(predicate)
+    override fun any(predicate: (MjPai) -> Boolean): Boolean = paiList.any(predicate)
 
     override fun toString(): String {
         val (num, type) = paiList.first()

@@ -84,14 +84,29 @@ object MjYakuParser {
                 MjYaku.IPECO -> {
                     val shunzuBodyList =
                         componentList.filterIsInstance<MjBody.ShunzuBody>().takeIf { it.size >= 2 } ?: return false
-                    shunzuBodyList.size == 4 && shunzuBodyList.distinct().size == 3
+                    shunzuBodyList.size != shunzuBodyList.distinct().size
                 }
 
                 MjYaku.CHANTA -> componentList.all { it.containsYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.HONROUTOU -> componentList.all { it.isAllYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
-                MjYaku.SANSHOKU_DOUJUU -> TODO()
+                MjYaku.SANSHOKU_DOUJUU -> run {
+                    val shunzuBody = componentList.filterIsInstance<MjBody.Shunzu>().takeIf { it.size >= 3 } ?: return@run false
+                    val shanshokuBody = shunzuBody.groupBy { it.paiList.map { pai -> pai.num }.toSet() }
+                        .values
+                        .find{ value -> value.size >= 3 } ?: return@run false
 
-                MjYaku.SANSHOKU_DOUKOU -> TODO()
+                    shanshokuBody.map { it.getPaiType() }.toSet() == setOf(PaiType.M, PaiType.P, PaiType.S)
+                }
+
+                MjYaku.SANSHOKU_DOUKOU -> run {
+                    val kutsuBody = componentList.filterIsInstance<MjBody.Kutsu>().takeIf { it.size >= 3 } ?: return@run false
+                    val shanshokuBody = kutsuBody.groupBy { it.paiList.first().num }
+                        .values
+                        .find{ value -> value.size >= 3 } ?: return@run false
+
+                    shanshokuBody.map { it.getPaiType() }.toSet() == setOf(PaiType.M, PaiType.P, PaiType.S)
+                }
+
                 MjYaku.ITTKITSUKAN -> run {
                     val shunzuBodys = componentList.filterIsInstance<MjBody.ShunzuBody>()
                     val (color, colorBodyList) = shunzuBodys.groupBy { it.getPaiType() }
@@ -108,12 +123,20 @@ object MjYakuParser {
                             && colorBodyList.any { it.paiList.checkNum(setOf(7, 8, 9)) }
                 }
 
-                MjYaku.TOITOI -> {
-                    val body = componentList.filterIsInstance<MjBody>()
-                    body.size == 4 && body.all { it !is MjBody.ShunzuBody }
-                }
+                MjYaku.TOITOI -> componentList.filterIsInstance<MjBody.Kutsu>().size == 4
 
-                MjYaku.SANANKOU -> TODO()
+                MjYaku.SANANKOU -> run {
+                    val menzenKutsu = componentList.filterIsInstance<MjBody.Kutsu>().filter {
+                        it.isMenzen()
+                    }
+
+                    return when {
+                        menzenKutsu.size < 3 -> false // 멘젠커쯔 3개 미만이면 false
+                        menzenKutsu.size == 4 -> true // 멘젠커쯔 4개면 true
+                        agariBlock in menzenKutsu -> agariHai.isTsumo() // 멘젠커쯔 3개이고 화료한 블럭이 그 중 하나일 경우 쯔모일때만 true
+                        else -> true // 다른 블록으로 화료한 경우 true
+                    }
+                }
                 MjYaku.SANKANTSU -> componentList.filterIsInstance<MjBody.KanBody>().size == 3
                 MjYaku.CHITOITSU -> componentList.filterIsInstance<MjHead>().size == 7
                 MjYaku.SHOUSANGEN -> {

@@ -1,7 +1,10 @@
 package dev.kuro9.service.mahjong.model
 
 import dev.kuro9.service.mahjong.MjYakuParser
-import dev.kuro9.service.mahjong.utils.MjFuuToHanVo
+import dev.kuro9.service.mahjong.enumuration.MjKaze
+import dev.kuro9.service.mahjong.enumuration.MjSeki
+import dev.kuro9.service.mahjong.enumuration.MjYaku
+import dev.kuro9.service.mahjong.utils.*
 
 data class MjTeHai(
     private val head: MjHead,
@@ -20,20 +23,14 @@ data class MjTeHai(
                 agariHai.getDoraCount(doraPaiList)
     }
 
-    /**
-     * 가능한 부/판수의 형태를 모두 리턴합니다.
-     */
-    fun getPossibleFuuHan(gameInfo: MjGameInfoVo): Set<MjFuuToHanVo> {
+    fun getYaku(gameInfo: MjGameInfoVo, isRiichi: Boolean): List<Set<MjYaku>> {
         val blockList = (body + head)
         val hasAgariHaiBlockIndex = blockList.withIndex().filter { (index, block) ->
             block.hasAgariHai(agariHai.pai)
         }.map { it.index }
 
-        return hasAgariHaiBlockIndex.map{
+        return hasAgariHaiBlockIndex.map {
             val notAgariBlockList = blockList.filterIndexed { index, _ -> index != it }
-
-            val fuu = blockList[it].getAgariBlockFuu(agariHai, gameInfo.zikaze, gameInfo.bakaze) + notAgariBlockList
-                .sumOf { block -> block.getBlockFuu(gameInfo.zikaze, gameInfo.bakaze) }
             val yakuSet = MjYakuParser.getYaku(
                 agariHai,
                 blockList[it],
@@ -41,8 +38,73 @@ data class MjTeHai(
                 gameInfo.zikaze,
                 *notAgariBlockList.toTypedArray()
             )
-            MjFuuToHanVo(fuu, yakuSet.sumOf { it.han })
-        }.toSet()
+
+            when (isRiichi) {
+                true -> yakuSet + MjYaku.RIICHI
+                false -> yakuSet
+            }
+        }
+
+    }
+
+    /**
+     * 가능한 부/판수의 형태를 모두 리턴합니다.
+     */
+    fun getPossibleFuuHan(
+        gameInfo: MjGameInfoVo,
+        isRiichi: Boolean = false,
+        isIppatsu: Boolean = false,
+        isChankan: Boolean = false,
+        isHaiTei: Boolean = false,
+        isHoutei: Boolean = false,
+        isDoubleRiichi: Boolean = false,
+    ): Set<MjScoreVo<out MjScoreI>> {
+        val blockList = (body + head)
+        val hasAgariHaiBlockIndex = blockList.withIndex().filter { (index, block) ->
+            block.hasAgariHai(agariHai.pai)
+        }.map { it.index }
+
+        return hasAgariHaiBlockIndex.map {
+            val notAgariBlockList = blockList.filterIndexed { index, _ -> index != it }
+
+            val yakuSet = MjYakuParser.getYaku(
+                agariHai,
+                blockList[it],
+                gameInfo.bakaze,
+                gameInfo.zikaze,
+                *notAgariBlockList.toTypedArray()
+            ).run {
+                val yakuToAdd = mutableSetOf<MjYaku>()
+                if (isRiichi) yakuToAdd += MjYaku.RIICHI
+                if (isIppatsu) yakuToAdd += MjYaku.IPPATSU
+                if (isChankan) yakuToAdd += MjYaku.CHANKAN
+                if (isHaiTei) yakuToAdd += MjYaku.HAITEI
+                if (isHoutei) yakuToAdd += MjYaku.HOUTEI
+                if (isDoubleRiichi) yakuToAdd += MjYaku.DOUBLE_RIICHI
+
+                this + yakuToAdd
+            }
+
+            val fuu = when {
+                MjYaku.CHITOITSU in yakuSet -> 25
+                MjYaku.PINFU in yakuSet -> when(agariHai) {
+                    is MjAgariHai.Ron -> 30
+                    is MjAgariHai.Tsumo -> 20
+                }
+                else -> {
+                    val blockFuu = blockList[it].getAgariBlockFuu(agariHai, gameInfo.zikaze, gameInfo.bakaze) + notAgariBlockList
+                        .sumOf { block -> block.getBlockFuu(gameInfo.zikaze, gameInfo.bakaze) } + if (this.isMenzen && this.agariHai.isRon()) 30 else 20
+
+                    blockFuu / 10 * 10 + if (blockFuu % 10 > 0) 10 else 0
+                }
+            }
+
+            val fuuToHanVo = MjFuuToHanVo(fuu, yakuSet.sumOf { it.han }, yakuSet).takeIf { it.han > 0 } ?: return@map null
+            when (this.agariHai) {
+                is MjAgariHai.Ron -> MjScoreUtil.getRonScore(fuuToHanVo, isOya = gameInfo.isOya)
+                is MjAgariHai.Tsumo -> MjScoreUtil.getTsumoScore(fuuToHanVo)
+            }
+        }.filterNotNull() .toSet()
     }
 
     companion object {
@@ -182,9 +244,18 @@ data class MjTeHai(
 
 
 fun main() {
-    // println(MjTeHai.parse("111222333s1222z".parseMjPai(), "1z".parseOneHai()))
+    val gameInfo = MjGameInfoVo(
+        gameSeq = MjGameSeq(MjKaze.TOU, 1),
+        firstOya = MjSeki.TOI,
+        dora = emptyList(),
+        uraDora = emptyList(),
+    )
+    val tehai = MjTeHai.parse("456m3344566s456p".parseMjPai(), "5s".parseAgariHai(isRon = true))
 
-    println()
+    tehai.forEach {
+        println("패 형태=$it")
+        println("점수=${it.getPossibleFuuHan(gameInfo, true)}")
 
-    // println(MjTeHai.parse("1112223334445s".parseMjPai(), "5s".parseOneHai()))
+        println("=====")
+    }
 }

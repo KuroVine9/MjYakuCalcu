@@ -57,11 +57,14 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         }
     }
 
+    sealed interface Shunzu : MjBody
+    sealed interface Kutsu : MjBody
+
 
     class ShunzuBody internal constructor(
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
-    ) : MjBody {
+    ) : Shunzu {
         fun isRyoumen(agariHai: MjPai): Boolean {
             return when (paiList.indexOf(agariHai)) {
                 0 -> (paiList.last().num != 9)
@@ -89,13 +92,17 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
         }
 
         override fun equals(other: Any?): Boolean {
-            when (other) {
+            return when (other) {
                 null -> return false
-                (other !is ShunzuBody) -> return false
+                !is ShunzuBody -> return false
+                else -> (other.isHuroBody == isHuroBody) and other.paiList.zip(paiList).all { (a, b) -> a == b }
             }
+        }
 
-            other as ShunzuBody
-            return (other.isHuroBody == isHuroBody) and other.paiList.zip(paiList).all { (a, b) -> a == b }
+        override fun hashCode(): Int {
+            var result = paiList.hashCode()
+            result = 31 * result + isHuroBody.hashCode()
+            return result
         }
 
     }
@@ -103,7 +110,7 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
     class PongBody internal constructor(
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
-    ) : MjBody {
+    ) : Kutsu {
         override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
             var basic = 2
             if (isAllYaoPai()) basic *= 2
@@ -143,12 +150,18 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
             return (other.isHuroBody == isHuroBody) and (other.paiList.first() == paiList.first())
         }
 
+        override fun hashCode(): Int {
+            var result = paiList.hashCode()
+            result = 31 * result + isHuroBody.hashCode()
+            return result
+        }
+
     }
 
     class KanBody internal constructor(
         override val paiList: List<MjPai>,
         override val isHuroBody: Boolean = false,
-    ) : MjBody {
+    ) : Kutsu {
         override fun getAgariBlockFuu(agariHai: MjAgariHai, ziKaze: MjKaze, baKaze: MjKaze): Int {
             var basic = 8
             if (isAllYaoPai()) basic *= 2
@@ -186,6 +199,12 @@ sealed interface MjBody : MjComponent, MjFuuProvider {
 
             other as KanBody
             return (other.isHuroBody == isHuroBody) and (other.paiList.first() == paiList.first())
+        }
+
+        override fun hashCode(): Int {
+            var result = paiList.hashCode()
+            result = 31 * result + isHuroBody.hashCode()
+            return result
         }
 
     }

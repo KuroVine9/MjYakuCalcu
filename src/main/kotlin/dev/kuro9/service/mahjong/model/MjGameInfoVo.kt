@@ -8,6 +8,8 @@ data class MjGameInfoVo(
     val honba: Int = 0,
     val firstOya: MjSeki,
     val tenhouCount: Int = 0,
+    val dora: List<MjPai>,
+    val uraDora: List<MjPai>
 ) {
     /** 자풍패 */
     val zikaze: MjKaze by lazy {
