@@ -90,19 +90,21 @@ object MjYakuParser {
                 MjYaku.CHANTA -> componentList.all { it.containsYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.HONROUTOU -> componentList.all { it.isAllYaoPai() } && componentList.any { it.getPaiType() == PaiType.Z }
                 MjYaku.SANSHOKU_DOUJUU -> run {
-                    val shunzuBody = componentList.filterIsInstance<MjBody.Shunzu>().takeIf { it.size >= 3 } ?: return@run false
+                    val shunzuBody =
+                        componentList.filterIsInstance<MjBody.Shunzu>().takeIf { it.size >= 3 } ?: return@run false
                     val shanshokuBody = shunzuBody.groupBy { it.paiList.map { pai -> pai.num }.toSet() }
                         .values
-                        .find{ value -> value.size >= 3 } ?: return@run false
+                        .find { value -> value.size >= 3 } ?: return@run false
 
                     shanshokuBody.map { it.getPaiType() }.toSet() == setOf(PaiType.M, PaiType.P, PaiType.S)
                 }
 
                 MjYaku.SANSHOKU_DOUKOU -> run {
-                    val kutsuBody = componentList.filterIsInstance<MjBody.Kutsu>().takeIf { it.size >= 3 } ?: return@run false
+                    val kutsuBody =
+                        componentList.filterIsInstance<MjBody.Kutsu>().takeIf { it.size >= 3 } ?: return@run false
                     val shanshokuBody = kutsuBody.groupBy { it.paiList.first().num }
                         .values
-                        .find{ value -> value.size >= 3 } ?: return@run false
+                        .find { value -> value.size >= 3 } ?: return@run false
 
                     shanshokuBody.map { it.getPaiType() }.toSet() == setOf(PaiType.M, PaiType.P, PaiType.S)
                 }
@@ -137,6 +139,7 @@ object MjYakuParser {
                         else -> true // 다른 블록으로 화료한 경우 true
                     }
                 }
+
                 MjYaku.SANKANTSU -> componentList.filterIsInstance<MjBody.KanBody>().size == 3
                 MjYaku.CHITOITSU -> componentList.filterIsInstance<MjHead>().size == 7
                 MjYaku.SHOUSANGEN -> {
@@ -162,9 +165,15 @@ object MjYakuParser {
                 MjYaku.CHINITSU -> componentList.map { it.getPaiType() }.distinct().size == 1
 
                 MjYaku.RIICHI, MjYaku.IPPATSU, MjYaku.CHANKAN, MjYaku.HAITEI, MjYaku.HOUTEI, MjYaku.DOUBLE_RIICHI -> false
-                MjYaku.TENHOU -> TODO()
-                MjYaku.CHIHOU -> TODO()
-                MjYaku.SUANKOU -> TODO()
+                MjYaku.TENHOU -> false
+                MjYaku.CHIHOU -> false
+                MjYaku.SUANKOU -> {
+                    agariHai.isTsumo() &&
+                            blocks.filterIsInstance<MjBody>()
+                                .takeIf { it.isNotEmpty() }
+                                ?.all { it !is MjBody.ShunzuBody && it.isMenzen() } ?: false
+                }
+
                 MjYaku.KOKUSHI -> TODO()
                 MjYaku.DAISANGEN -> TODO()
                 MjYaku.TSUISO -> TODO()
@@ -174,7 +183,13 @@ object MjYakuParser {
                 MjYaku.CHUREN -> TODO()
                 MjYaku.SUKANTSU -> TODO()
                 MjYaku.DAISUSI -> TODO()
-                MjYaku.SUANKOU_TANKI -> TODO()
+                MjYaku.SUANKOU_TANKI -> {
+                    agariBlock is MjHead &&
+                            blocks.filterIsInstance<MjBody>()
+                                .takeIf { it.isNotEmpty() }
+                                ?.all { it !is MjBody.ShunzuBody && it.isMenzen() } ?: false
+                }
+
                 MjYaku.KOKUSHI_13MEN -> TODO()
                 MjYaku.CHUREN_9MEN -> TODO()
             }
